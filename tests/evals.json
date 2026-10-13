@@ -1,0 +1,30 @@
+{
+  "skill_name": "deep-dive",
+  "note": "Realistic prompts for trying the kit by hand or with a sub-agent. Replace the bracketed paths with real ones.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我 deep dive 这篇 paper，我要完全了解里面的细节，不是只懂 summary：[path/to/paper.pdf]",
+      "expected_output": "A run folder whose dossier passes the lint: every page read, every part with its mechanism, failure paths, a worked example and newcomer questions; statements checked against primary sources marked verified or corrected; then one scope page with at most four questions.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I only want section 10 of this paper (the safety and permissions part). Research it in full detail and tell me what is out of date: [path/to/paper.pdf]",
+      "expected_output": "The section's page range recorded as `pages:` in the sources index and read in full; corrections listed with what the paper claims and what the primary source says now; no gap filled in with a guess.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I don't have a paper for this one. I want to really understand how prompt caching works in LLM APIs, end to end. Go find the sources yourself.",
+      "expected_output": "Primary sources found and listed (official documentation, not blog posts); no `provided` source; a dossier at the same depth as for a paper.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "The dossier in ./deep-dive-parcel-lockers is done. Show me the scope before you build anything.",
+      "expected_output": "One short page (numbers, the map, a coverage table with everything in, corrections and gaps, the settings), followed by one round of at most four questions; scope.md written only after the answers.",
+      "files": []
+    }
+  ]
+}

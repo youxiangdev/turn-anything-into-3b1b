@@ -1,0 +1,140 @@
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,500;0,700;1,500&display=swap">
+<style>
+/*{{CSS}}*/
+/* Layout concept: a player. One 16:9 frame, one narration line under it, a timeline cut into chapters. Nothing on the picture needs a click: a ghost cursor acts out every choice. */
+.v{max-width:1280px;margin:0 auto;padding-inline:clamp(16px,3vw,36px);padding-block:16px 56px;display:grid;gap:12px}
+.v-top{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+.v-top h1{font:700 clamp(20px,2.4vw,28px)/1.2 var(--serif);margin:0;text-wrap:balance}
+.v-top p{margin:0;color:var(--ink2);font-size:14.5px}
+.v-play{display:grid;gap:10px;justify-items:center;background:var(--bg)}
+.v-frame{position:relative;width:min(100%,calc((100vh - 250px)*1.7778));min-width:min(100%,460px)}
+.v-big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:clamp(56px,9vw,92px);aspect-ratio:1;border-radius:50%;border:0;background:var(--yellow);color:#17140a;font-size:clamp(20px,3.4vw,34px);padding-left:.25em;box-shadow:0 8px 34px rgba(0,0,0,.6)}
+.v-rw{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:6;font:600 15px var(--mono);letter-spacing:.06em;color:#17140a;background:var(--orange);border-radius:999px;padding:5px 16px;pointer-events:none;opacity:0}
+.v-rw.on{animation:v-rw 1.5s ease-out}
+@keyframes v-rw{0%{opacity:0}12%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.v-cap{min-height:4.6em;margin-top:2px}
+.v-bar{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap}
+.v-bar button{border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:5px 12px;font-size:14px;min-width:2.4em}
+.v-bar button.pri{background:var(--blue);border-color:var(--blue);color:#06222a;font-weight:600;min-width:5.2em}
+.v-bar button:disabled{opacity:.35;cursor:default}
+.v-tl{flex:1 1 220px;display:flex;gap:3px;height:22px;align-items:center;cursor:pointer;min-width:0}
+.v-tl span{display:block;height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:3px}
+.v-tl span i{display:block;height:100%;width:0;background:var(--yellow)}
+.v-tl:hover span{height:12px}
+.v-tm{font:400 12.5px var(--mono);color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.v-chs{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.v-chs button{width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 12px;display:grid;gap:1px}
+.v-chs button b{font:400 11.5px var(--mono);color:var(--ink3)}
+.v-chs button span{font:700 16.5px/1.25 var(--serif)}
+.v-chs button[aria-current="true"]{border-color:var(--yellow)}
+.v-chs button[aria-current="true"] b{color:var(--yellow)}
+.v-foot{margin-top:26px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+.v-play:fullscreen{align-content:center;padding:18px 24px}
+.v-play:fullscreen .v-frame{width:min(100%,calc((100vh - 190px)*1.7778))}
+#lint{font:12px var(--mono);white-space:pre-wrap;color:var(--ink2)}
+</style>
+
+<div class="v">
+  <header class="v-top"><h1 id="vTitle"></h1><p id="vCh"></p></header>
+  <div class="v-play" id="vPlay">
+    <div class="v-frame"><div id="stage"></div>
+      <button type="button" class="v-big" id="vBig" aria-label="Play">▶</button>
+      <span class="v-rw" id="vRw">rewind</span>
+    </div>
+    <p class="kx-cap v-cap" id="cap" aria-live="polite"></p>
+    <p class="kx-turn">Drawn for a wide screen. Turn your phone sideways.</p>
+    <div class="v-bar">
+      <button type="button" id="bPlay" class="pri">Play</button>
+      <button type="button" id="bPrev" aria-label="Previous step">‹</button>
+      <button type="button" id="bNext" aria-label="Next step">›</button>
+      <div class="v-tl" id="tl" aria-hidden="true"></div>
+      <span class="v-tm" id="tm"></span>
+      <button type="button" id="bSpeed" title="Playback speed">1×</button>
+      <button type="button" id="bFs" title="Full screen" aria-label="Full screen">⛶</button>
+    </div>
+  </div>
+  <ol class="v-chs" id="chs"></ol>
+  <footer class="v-foot" id="foot"></footer>
+  <pre id="lint" hidden></pre>
+</div>
+
+<script>
+/*{{KIT}}*/
+</script>
+<script>
+/*{{STORY}}*/
+</script>
+<script>
+/* video shell: plays every frame in order, acting out each choice with the ghost cursor */
+(function(){
+'use strict';
+const S=Kit.STORY,$=id=>document.getElementById(id),F=Kit.frames(S),stage=Kit.stage($('stage'));
+const q=new URLSearchParams(location.search),hash=(location.hash||'').slice(1);
+const still=q.has('still');if(still)document.documentElement.classList.add('kx-still');
+const wait=ms=>new Promise(r=>setTimeout(r,ms/Kit.speed));
+const dur=F.map(f=>Kit.dwell(f)+1500),total=dur.reduce((a,b)=>a+b,0),at=[];dur.reduce((a,b,i)=>{at[i]=a;return a+b;},0);
+const fmt=ms=>{const s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+const count=S.chapters.map((c,i)=>F.filter(f=>f.c===i).length),first=S.chapters.map((c,i)=>F.findIndex(f=>f.c===i));
+let fi=0,playing=false,tok=0,layer=null,mseg=null,ms=-1,started=false,ended=false;
+$('vTitle').textContent=S.title;$('foot').textContent=S.credits||'';
+$('tl').innerHTML=S.chapters.map((c,i)=>'<span style="flex:'+count[i]+'" title="'+Kit.esc(c.title)+'"><i></i></span>').join('');
+$('chs').innerHTML=S.chapters.map((c,i)=>'<li><button type="button" data-c="'+i+'"><b>'+Kit.esc(c.kicker||('Part '+(i+1)))+' · '+fmt(at[first[i]])+'</b><span>'+Kit.esc(c.title)+'</span></button></li>').join('');
+function mount(f){if(ms===f.s)return;if(mseg){mseg.unmount();layer.close();}layer=stage.open();if(!still)layer.root.classList.add('in');f.seg.mount(layer);mseg=f.seg;ms=f.s;}
+function setCap(t){const cp=$('cap');if(cp.textContent===t)return;cp.textContent=t;if(!Kit.reduce&&!still&&cp.animate)cp.animate([{opacity:0,transform:'translateY(5px)'},{opacity:1,transform:'none'}],{duration:360,easing:'ease-out'});}
+function sync(holdCap){
+  const f=F[fi];if(!holdCap)setCap(f.cap);
+  $('tl').querySelectorAll('span').forEach((sp,i)=>{sp.firstChild.style.width=(fi<first[i]?0:fi>=first[i]+count[i]?100:(fi-first[i]+1)/count[i]*100)+'%';});
+  $('tm').textContent=fmt(at[fi])+' / '+fmt(total);
+  $('vCh').textContent=(S.chapters[f.c].kicker||('Part '+(f.c+1)))+' · '+S.chapters[f.c].title+'  ('+(f.c+1)+' of '+S.chapters.length+')';
+  $('chs').querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-current',String(i===f.c)));
+  $('bPlay').textContent=playing?'Pause':ended?'Replay':'Play';$('bPrev').disabled=fi===0;$('bNext').disabled=fi>=F.length-1;
+  $('vBig').hidden=playing||started;
+}
+async function show(i,how){
+  const t=++tok,f=F[i],act=!!f.pick&&how!=='jump'&&!still;fi=i;ended=false;mount(f);const path=f.seg.steps(f.ch);sync(act);
+  if(how==='jump'||still){stage.rest();await f.seg.render(path,f.k,f.ch,'jump');return t===tok;}
+  if(f.pick){for(const cid in f.pick){await stage.press(stage.find(cid,f.pick[cid]));if(t!==tok)return false;}
+    setCap(f.cap);const ok=await f.seg.render(path,f.k,f.ch,'pick');return ok&&t===tok;}  /* the line changes when the outcome plays, not while the cursor travels */
+  stage.rest();
+  if(f.rewind){const rw=$('vRw');rw.classList.remove('on');void rw.offsetWidth;rw.classList.add('on');await f.seg.render(path,f.k,f.ch,'jump');await wait(700);return t===tok;}
+  const ok=await f.seg.render(path,f.k,f.ch,'enter');return ok&&t===tok;
+}
+async function run(replayFirst){
+  if(replayFirst){const ok=await show(fi,'enter');if(!ok||!playing)return;const t=tok;await wait(Kit.dwell(F[fi]));if(t!==tok||!playing)return;}
+  while(playing){
+    if(fi>=F.length-1){playing=false;ended=true;sync();return;}
+    const ok=await show(fi+1,'enter');if(!ok||!playing)return;
+    const t=tok;await wait(Kit.dwell(F[fi]));if(t!==tok||!playing)return;}
+}
+function play(){if(playing)return;const fresh=!started||fi>=F.length-1;if(fi>=F.length-1)fi=0;started=true;playing=true;sync();run(fresh);}
+function pause(){playing=false;tok++;sync();}
+async function seek(i,keep){const was=playing&&keep;playing=false;started=true;await show(Math.max(0,Math.min(F.length-1,i)),'jump');
+  if(was){playing=true;sync();const t=tok;await wait(900);if(t===tok&&playing)run(false);}}
+$('bPlay').addEventListener('click',()=>playing?pause():play());
+$('vBig').addEventListener('click',play);
+$('bPrev').addEventListener('click',()=>seek(fi-1));
+$('bNext').addEventListener('click',()=>{playing=false;started=true;if(fi<F.length-1)show(fi+1,'enter');});
+$('tl').addEventListener('click',e=>{const r=$('tl').getBoundingClientRect(),x=(e.clientX-r.left)/r.width;seek(Math.round(x*(F.length-1)),true);});
+$('chs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;seek(first[+b.dataset.c],false).then(()=>{$('vPlay').scrollIntoView({block:'nearest',behavior:'smooth'});play();});});
+$('bSpeed').addEventListener('click',()=>{const v=[1,1.5,2,.75];Kit.speed=v[(v.indexOf(Kit.speed)+1)%v.length];$('bSpeed').textContent=Kit.speed+'×';});
+if(!document.fullscreenEnabled)$('bFs').hidden=true;
+$('bFs').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const p=$('vPlay').requestFullscreen();if(p&&p.catch)p.catch(()=>{});}}catch(e){}});
+document.addEventListener('keydown',e=>{const t=e.target&&e.target.closest?e.target:document.body;if(t.closest('input,textarea,select'))return;
+  if(e.key===' '||e.key==='k'){if(t.closest('button'))return;e.preventDefault();playing?pause():play();}
+  else if(e.key==='ArrowRight'){e.preventDefault();$('bNext').click();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();seek(fi-1);}
+  else if(e.key==='f')$('bFs').click();});
+/* deep links: #f120 opens on frame 120, #c3 on chapter 3 (a published page only receives a plain #token) */
+let start=0;const m=/^([fc])(\d+)$/.exec(hash);
+if(q.has('f'))start=+q.get('f');else if(m)start=m[1]==='f'?+m[2]:(first[+m[2]-1]||0);
+if(start>0)started=true;
+show(Math.max(0,Math.min(F.length-1,start)),'jump').then(async()=>{
+  if(!q.has('lint'))return;
+  /* lint mode: visit every frame at rest and list layout problems (used by scripts/shoot.py --lint) */
+  const seen={};
+  for(let i=0;i<F.length;i++){await show(i,'jump');Kit.lint(stage.el).forEach(p=>{(seen[p]=seen[p]||[]).push(i);});}
+  const pre=$('lint');pre.hidden=false;pre.textContent=JSON.stringify({frames:F.length,minutes:+(total/60000).toFixed(1),problems:seen},null,1);document.title='LINT_DONE';
+});
+})();
+</script>

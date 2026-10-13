@@ -1,0 +1,10 @@
+{
+  "name": "turn-anything-into-3b1b",
+  "version": "0.2.0",
+  "description": "Give it a paper, a link, a repository or a topic and get back an animated explainer in the style of a 3Blue1Brown video. It reads the whole source, checks it against primary sources, confirms the scope with you once, builds a video version and a slides version, and checks that nothing in scope was dropped.",
+  "author": { "name": "youxiangdev", "url": "https://github.com/youxiangdev" },
+  "homepage": "https://github.com/youxiangdev/turn-anything-into-3b1b",
+  "repository": "https://github.com/youxiangdev/turn-anything-into-3b1b",
+  "license": "MIT",
+  "keywords": ["explainer", "research", "paper", "animation", "visualization", "skills"]
+}

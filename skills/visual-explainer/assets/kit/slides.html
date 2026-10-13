@@ -1,0 +1,130 @@
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,500;0,700;1,500&display=swap">
+<style>
+/*{{CSS}}*/
+/* Layout concept: a vertical deck. The picture stays pinned and each scroll gesture is one step. A step that asks the viewer to act holds the deck until they act. */
+html,body{height:100%}
+body{overflow:hidden}
+#deck{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;outline:0}
+#deck::-webkit-scrollbar{display:none}
+.pin{position:sticky;top:0;height:var(--vh,100vh);margin-bottom:calc(-1*var(--vh,100vh));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding-inline:max(16px,3.2vw);padding-block:10px 12px}
+.snaps{pointer-events:none}
+.snaps i{display:block;height:var(--vh,100vh);scroll-snap-align:start;scroll-snap-stop:always}
+.s-top{align-self:stretch;display:flex;gap:4px 14px;align-items:baseline;flex-wrap:wrap}
+.s-top b{font:700 17px/1.2 var(--serif)}
+.s-top span{color:var(--ink2);font-size:13.5px}
+.s-top .no{margin-left:auto;font:400 12.5px var(--mono);color:var(--ink3);font-variant-numeric:tabular-nums}
+#stageBox{flex:0 0 auto;max-width:100%}
+.s-cap{min-height:4.5em}
+.s-foot{min-height:40px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 12px;font-size:13.5px;color:var(--ink3);text-align:center}
+.s-foot .go{display:inline-flex;gap:9px;align-items:center}
+.s-foot .go::before{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-5px;animation:s-bob 1.6s ease-in-out infinite}
+.s-foot .lock{display:inline-flex;gap:9px;align-items:center;color:#17140a;background:var(--yellow);border-radius:999px;padding:6px 18px;font-weight:600;font-size:14.5px;line-height:1.3}
+.s-foot .lock svg{width:15px;height:15px;flex:none}
+.s-foot .lock.nudge{animation:kx-nudge .42s ease-out}
+.s-foot .ok{color:var(--green);font-weight:600}
+.rail{position:fixed;right:4px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:4}
+.rail button{width:8px;height:24px;padding:0;border-radius:4px;border:0;background:var(--line)}
+.rail button.done{background:var(--ink3)}
+.rail button.cur{background:var(--yellow)}
+.rail button:disabled{opacity:.5;cursor:default}
+@keyframes s-bob{0%,100%{transform:translateY(0) rotate(45deg)}50%{transform:translateY(4px) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){.s-foot .go::before{animation:none}}
+</style>
+
+<div id="deck" tabindex="0" aria-label="Slides. Scroll, swipe or use the arrow keys to move one step at a time.">
+  <div class="pin" id="pin">
+    <header class="s-top" id="sTop"><b id="sTitle"></b><span id="sCh"></span><span class="no" id="sNo"></span></header>
+    <div id="stageBox"><div id="stage"></div></div>
+    <p class="kx-cap s-cap" id="cap" aria-live="polite"></p>
+    <div class="s-foot" id="foot"></div>
+    <p class="kx-turn">Drawn for a wide screen. Turn your phone sideways.</p>
+  </div>
+  <div class="snaps" id="snaps"></div>
+</div>
+<nav class="rail" id="rail" aria-label="Chapters"></nav>
+
+<script>
+/*{{KIT}}*/
+</script>
+<script>
+/*{{STORY}}*/
+</script>
+<script>
+/* slides shell: one scroll gesture per step; a step with a gate holds the deck until the viewer settles it */
+(function(){
+'use strict';
+const S=Kit.STORY,$=id=>document.getElementById(id),deck=$('deck'),stage=Kit.stage($('stage'));
+const q=new URLSearchParams(location.search),hash=(location.hash||'').slice(1),still=q.has('still');
+if(still)document.documentElement.classList.add('kx-still');
+const LOCK='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="7" width="10" height="7.5" rx="2" fill="currentColor"/></svg>';
+const ch={},tries={},touched={};
+let L=[],total=0,cur=0,tok=0,layer=null,mseg=null,ms=-1,H=1,fresh=false;
+$('sTitle').textContent=S.title;
+$('rail').innerHTML=S.chapters.map((c,i)=>'<button type="button" data-c="'+i+'" title="'+Kit.esc(c.title)+'" aria-label="'+Kit.esc(c.title)+'"></button>').join('');
+function relayout(){
+  L=Kit.deck(S,ch,tries);total=Kit.deck(S,ch,tries,true).length;
+  const sn=$('snaps');while(sn.children.length<L.length)sn.appendChild(document.createElement('i'));while(sn.children.length>L.length)sn.lastChild.remove();}
+function fit(){
+  H=deck.clientHeight;deck.style.setProperty('--vh',H+'px');
+  const pin=$('pin'),cs=getComputedStyle(pin),aw=pin.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const rest=$('sTop').offsetHeight+$('cap').offsetHeight+$('foot').offsetHeight+30+parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+  $('stageBox').style.width=Math.max(200,Math.min(aw,(H-rest)*16/9))+'px';stage.fit();deck.scrollTop=cur*H;}
+function mount(sl){if(ms===sl.s)return;if(mseg){mseg.unmount();layer.close();}layer=stage.open();if(!still)layer.root.classList.add('in');sl.seg.mount(layer);mseg=sl.seg;ms=sl.s;}
+function setCap(t){const cp=$('cap');if(cp.textContent===t)return;const h=cp.offsetHeight;cp.textContent=t;
+  if(!Kit.reduce&&!still&&cp.animate)cp.animate([{opacity:0,transform:'translateY(5px)'},{opacity:1,transform:'none'}],{duration:360,easing:'ease-out'});
+  if(cp.offsetHeight!==h)fit();}
+const capNow=(sl,path)=>{const st=path[sl.k];return sl.gate&&touched[Kit.gkey(sl.gate)]?Kit.capOf(st,ch):(st.cap||'');};
+function ui(){
+  const sl=L[cur],c=S.chapters[sl.c],g=sl.gate,f=$('foot');
+  $('sCh').textContent=(c.kicker||('Part '+(sl.c+1)))+' · '+c.title;$('sNo').textContent=(cur+1)+' / '+total;
+  if(sl.locked)f.innerHTML='<span class="lock" id="lk">'+LOCK+Kit.esc((g.type==='predict'&&touched[Kit.gkey(g)]?'Not that one. Try again: ':'')+(g.prompt||'Your turn. Make a choice to continue.'))+'</span>';
+  else if(g&&fresh)f.innerHTML='<span class="ok">Unlocked.</span><span class="go">Scroll to continue</span>';
+  else if(cur>=total-1)f.innerHTML='<span>The end. Scroll up to revisit any step.</span>';
+  else f.innerHTML='<span class="go">'+(cur===0?'Scroll, swipe or press ↓ to begin':g?'Scroll, or try another choice':'Scroll')+'</span>';
+  stage.el.classList.toggle('kx-live',!!sl.locked);
+  $('rail').querySelectorAll('button').forEach((b,i)=>{b.className=i===sl.c?'cur':i<sl.c?'done':'';b.disabled=!L.some(x=>x.c===i);});}
+async function show(i,how){
+  const t=++tok,sl=L[i],g=sl.gate;cur=i;fresh=false;
+  if(g&&g.init)for(const k in g.init)if(ch[k]===undefined)ch[k]=g.init[k];
+  mount(sl);const path=sl.seg.steps(ch);setCap(capNow(sl,path));ui();
+  await sl.seg.render(path,sl.k,ch,still?'jump':how);return t===tok;}
+/* the viewer pressed a control: record it, re-cut the deck, and let the segment play the outcome */
+function pick(b){
+  const sl=L[cur],g=sl.gate;if(!g||Kit.gids(g).indexOf(b.dataset.g)<0)return;
+  const key=Kit.gkey(g),was=sl.locked;ch[b.dataset.g]=b.dataset.o;touched[key]=1;
+  if(g.type==='explore'){const sig=Kit.gids(g).map(id=>ch[id]).join('|'),a=tries[key]||(tries[key]=[]);if(a.indexOf(sig)<0)a.push(sig);}
+  relayout();const now=L[cur],path=now.seg.steps(ch);fresh=was&&!now.locked;setCap(capNow(now,path));ui();
+  ++tok;now.seg.render(path,now.k,ch,still?'jump':'pick');}
+function nudge(){const l=$('lk');if(!l)return;l.classList.remove('nudge');void l.offsetWidth;l.classList.add('nudge');}
+/* the picture is pinned, so there is nothing to glide: jump the scroll position and draw the step at once */
+function go(i){if(i<0)return;if(i>=L.length){if(L[cur].locked)nudge();return;}const how=i===cur+1?'enter':'jump';deck.scrollTop=i*H;if(i!==cur)show(i,how);}
+/* no animation-frame throttle here: a page in a background tab gets no frames, and the step must still follow the scroll position */
+deck.addEventListener('scroll',()=>{const i=Math.max(0,Math.min(L.length-1,Math.round(deck.scrollTop/H)));if(i!==cur)show(i,i===cur+1?'enter':'jump');},{passive:true});
+/* one wheel gesture is one step. A mouse notch is too short to cross a snap point and a trackpad fling is long enough to cross several,
+   so the wheel is handled here: act on the first event of a gesture, then wait for the wheel to go quiet or to be pushed again. */
+let wT=-1e9,wGo=-1e9,wPrev=0;
+deck.addEventListener('wheel',e=>{if(e.ctrlKey)return;e.preventDefault();
+  const now=performance.now(),a=Math.abs(e.deltaY)*(e.deltaMode===1?32:1),quiet=now-wT>180,again=now-wGo>450&&a>40&&a>wPrev*2.2;
+  wT=now;wPrev=a;if(a<3||!(quiet||again))return;wGo=now;go(cur+(e.deltaY>0?1:-1));},{passive:false});
+let ty=null;
+deck.addEventListener('touchstart',e=>{ty=e.touches[0].clientY;},{passive:true});
+deck.addEventListener('touchmove',e=>{if(ty!==null&&ty-e.touches[0].clientY>30&&cur===L.length-1&&L[cur].locked){nudge();ty=null;}},{passive:true});
+stage.el.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(b)pick(b);});
+$('rail').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=L.findIndex(x=>x.c===+b.dataset.c);if(i>=0)go(i);});
+document.addEventListener('keydown',e=>{const t=e.target&&e.target.closest?e.target:document.body;if(t.closest('input,textarea,select'))return;
+  const b=t.closest('[data-g]');
+  if(b&&b.tagName!=='BUTTON'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pick(b);return;}
+  if(e.key==='ArrowDown'||e.key==='PageDown'||(e.key===' '&&!t.closest('button'))){e.preventDefault();go(cur+1);}
+  else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  else if(e.key==='Home'){e.preventDefault();go(0);}});
+/* local testing only: ?unlock settles every gate with its last demo case, ?s=12 opens on slide 12, ?still draws without motion */
+if(q.has('unlock'))for(let n=0;n<999;n++){const d=Kit.deck(S,ch,tries),last=d[d.length-1];if(!last.locked)break;
+  const g=last.gate,cs=Kit.demoCases(g),key=Kit.gkey(g);Object.assign(ch,g.init||{},cs.length?cs[cs.length-1].set:{});touched[key]=1;
+  if(g.type==='predict')ch[g.id]=g.answer;if(g.type==='explore')tries[key]=cs.map((c,i)=>'x'+i).concat('y');}
+relayout();
+const m=/^s(\d+)$/.exec(hash);cur=Math.max(0,Math.min(L.length-1,q.has('s')?+q.get('s'):m?+m[1]-1:0));
+fit();if(window.ResizeObserver)new ResizeObserver(fit).observe(deck);else window.addEventListener('resize',fit);
+show(cur,cur===0&&!still?'enter':'jump');
+})();
+</script>

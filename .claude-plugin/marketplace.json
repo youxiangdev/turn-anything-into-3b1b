@@ -1,0 +1,12 @@
+{
+  "name": "youxiangdev",
+  "description": "Skills by youxiangdev",
+  "owner": { "name": "youxiangdev", "url": "https://github.com/youxiangdev" },
+  "plugins": [
+    {
+      "name": "turn-anything-into-3b1b",
+      "source": ".",
+      "description": "Turn a paper, link, repository or topic into an animated explainer, with the research checked and the coverage verified."
+    }
+  ]
+}

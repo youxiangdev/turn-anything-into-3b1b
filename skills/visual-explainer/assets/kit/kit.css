@@ -1,0 +1,123 @@
+/* Explainer kit · kit.css. Shared by both shells. One dark stage by design: the picture is a video frame, not a document.
+   To re-skin an explainer, change these tokens and the matching colours in Kit.C (engine.js) together. */
+:root{
+  color-scheme:dark;
+  --bg:#0b0e13;--stage:#07090d;--panel:#12161e;--ink:#eceff4;--ink2:#a9b2c3;--ink3:#6c7689;--line:#252c3a;--faint:#39414f;
+  --blue:#58c4dd;--teal:#5cd0b3;--yellow:#f7d96b;--green:#83c167;--red:#fc6255;--orange:#ff9f5a;
+  --serif:"STIX Two Text","Iowan Old Style","Times New Roman",serif;
+  --sans:"IBM Plex Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,[data-g]:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+
+/* the stage */
+/* code on the stage must read character for character, so a font may not merge >= into one glyph */
+.kx-stage{position:relative;aspect-ratio:16/9;max-width:100%;background:var(--stage);border:1px solid var(--line);border-radius:10px;overflow:hidden;--k:1;font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+.kx-layer{position:absolute;inset:0}
+.kx-layer.in{animation:kx-fade .32s ease-out}
+.kx-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.kx-svg text{user-select:none;-webkit-user-select:none}
+.kx-html{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0;transform:scale(var(--k));pointer-events:none;font-family:var(--sans);font-size:22px;line-height:1.4;color:var(--ink)}
+.kx-html>*{pointer-events:auto}
+.f-sans{font-family:var(--sans)}.f-serif{font-family:var(--serif)}.f-mono{font-family:var(--mono)}.f-math{font-family:var(--serif);font-style:italic}
+.kx-ring{animation:kx-spin 7s linear infinite}
+.kx-eyes{transform-origin:0 -10px;animation:kx-blink 5.5s infinite}
+.kx-flow{animation:kx-march 1s linear infinite}
+.kx-cap{font-size:clamp(16px,1.9vw,21px);line-height:1.5;text-align:center;max-width:46em;margin:0 auto;color:var(--ink);text-wrap:balance}
+/* the picture is drawn for a wide frame; on an upright phone it is small, so say what to do about it */
+.kx-turn{display:none;margin:0;font-size:12.5px;color:var(--ink3);text-align:center}
+@media (max-width:600px) and (orientation:portrait){.kx-turn{display:block}}
+
+/* the ghost cursor of the video version, and the pressed and waiting looks of a control */
+.kx-cur{position:absolute;left:0;top:0;width:calc(34px*var(--k) + 14px);pointer-events:none;z-index:5;transition:transform .65s cubic-bezier(.5,0,.2,1);will-change:transform}
+.kx-cur svg{display:block;width:100%;height:auto;margin:-8% 0 0 -17%;filter:drop-shadow(0 2px 5px rgba(0,0,0,.7))}
+.kx-cur i{position:absolute;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:3px solid var(--yellow);opacity:0}
+.kx-cur.click i{animation:kx-click .3s ease-out}
+.kx-press{filter:brightness(1.45)}
+.kx-live button[data-g]{animation:kx-pulse 1.6s ease-in-out infinite}
+.kx-live g[data-g]{animation:kx-glow 1.6s ease-in-out infinite}
+
+/* format B: simulator panels, laid out in stage pixels */
+.sim .simh{position:absolute;left:40px;top:20px;font:700 30px var(--serif);color:var(--ink)}
+.sp{position:absolute;background:var(--panel);border:2.5px solid var(--line);border-radius:14px;padding:14px 18px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.sp.hi{border-color:var(--yellow);box-shadow:0 0 0 4px rgba(247,217,107,.14)}
+.sp h4{margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:12px;font:600 17px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.sp h4 i{font-style:normal;color:var(--ink3);text-transform:none;letter-spacing:0}
+.spb{display:flex;flex-direction:column;gap:10px;min-height:0}
+.spb p{margin:0;font-size:21px;color:var(--ink2)}
+.spb .st{font:700 29px/1.25 var(--serif)}
+.spb ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.spb ul li{border-left:5px solid var(--t);background:rgba(255,255,255,.04);border-radius:0 6px 6px 0;padding:5px 12px;font-size:20px;line-height:1.3}
+.spb ul li.mono{font-family:var(--mono);font-size:18px}
+.spb ul li.empty{border-left-color:var(--line);color:var(--ink3);font-style:italic}
+.spb ul li.new{animation:kx-in .5s ease-out}
+.spb pre{margin:0;font:400 18px/1.45 var(--mono);white-space:pre-wrap;color:var(--ink);background:#0b0e14;border-radius:8px;padding:10px 12px}
+.spb ol.stn{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:6px}
+.spb ol.stn li{counter-increment:s;padding:6px 12px;border:2px solid var(--line);border-radius:8px;font-size:20px;color:var(--ink3)}
+.spb ol.stn li::before{content:counter(s) " · ";font-family:var(--mono)}
+.spb ol.stn li.on{border-color:var(--teal);color:var(--ink);background:rgba(92,208,179,.1)}
+.spb .tags{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.spb .tags code{font:400 18px var(--mono);border:2px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--ink2)}
+.spb .tags code.on{border-color:var(--yellow);color:var(--yellow);background:rgba(247,217,107,.08)}
+.spb .lb{font:600 16px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:4px}
+.spb .btns .bg{display:flex;flex-wrap:wrap;gap:10px}
+.spb>*{flex:none}
+.spb dl.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;margin:0;font-size:20px}
+.spb dl.kv dt{color:var(--ink3)}
+.spb dl.kv dd{margin:0}
+.spb .btns{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.kx-b{font:600 20px var(--sans);border:2.5px solid var(--yellow);background:transparent;color:var(--yellow);border-radius:999px;padding:7px 22px;transition:transform .12s,background .2s}
+.kx-b[aria-pressed="true"]{background:var(--yellow);color:#17140a}
+.kx-b.kx-press{transform:scale(.93);filter:none}
+.pipe{display:flex;gap:12px}
+.pipe .pg{flex:1;min-width:0;border:2.5px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;opacity:.5;transition:opacity .3s,border-color .3s,background .3s}
+.pipe .pg b{font-size:21px}
+.pipe .pg small{font-size:16px;color:var(--ink3);line-height:1.3}
+.pipe .pg span{font:600 18px var(--mono);margin-top:6px;color:var(--ink3)}
+.pipe .pg.on{opacity:1;border-color:var(--t);background:color-mix(in srgb,var(--t) 9%,transparent)}
+.pipe .pg.on span{color:var(--t)}
+.pipe .pg.res{flex:1.15}
+.pipe .pg.off{opacity:.32;border-style:dashed}
+.spb .note{transition:opacity .4s;font-size:21px;color:var(--ink)}
+.pipe.wait~.note{opacity:0}
+.fly{position:absolute;left:0;top:0;z-index:3;font:600 19px var(--mono);background:var(--t);color:#0b0e13;border-radius:8px;padding:6px 14px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+
+/* format C: sequence diagram */
+.sq-life{stroke:var(--faint);stroke-width:2;stroke-dasharray:5 7}
+.sq-head{fill:var(--panel);stroke-width:2.5}
+.sq-ht{fill:var(--ink);font:600 21px var(--sans);text-anchor:middle;dominant-baseline:central}
+.sq-lane{fill:var(--ink);font:700 34px var(--serif);text-anchor:middle;dominant-baseline:central}
+.sq-split{stroke:var(--line);stroke-width:2}
+.sq-body{transition:transform .5s ease}
+.sq-ar{stroke-width:3;stroke-linecap:round;stroke-dasharray:1}
+.sq-lab{font:500 20px var(--sans);text-anchor:middle;dominant-baseline:central}
+.sq-lab.start{text-anchor:start}
+.sq-m{opacity:.62;transition:opacity .3s}
+.sq-m.cur{opacity:1}
+.sq-hl{fill:rgba(247,217,107,.08);stroke:rgba(247,217,107,.45);stroke-width:1.5;transition:transform .35s ease}
+.sq-frm{fill:none;stroke:var(--line);stroke-width:2}
+.sq-frt{fill:var(--ink3);font:600 16px var(--mono);letter-spacing:.08em;dominant-baseline:central}
+
+/* format E: tiny world */
+.kx-lab{font:500 21px var(--sans);text-anchor:middle;dominant-baseline:central}
+.kx-sign{fill:var(--yellow);font:600 19px var(--mono);text-anchor:middle;dominant-baseline:central}
+.kx-card{fill:#0b0e13;font:600 18px var(--mono);text-anchor:middle;dominant-baseline:central}
+.kx-bar{stroke:var(--red);stroke-width:8;stroke-linecap:round;transition:transform .35s ease,stroke .35s}
+.kx-bar.open{stroke:var(--green);transform:translateY(-36px)}
+.kx-ring2{transform-box:fill-box;transform-origin:center;animation:kx-spin 6s linear infinite;opacity:0;transition:opacity .3s}
+.kx-flash polygon{filter:brightness(1.7)}
+
+@keyframes kx-spin{to{transform:rotate(360deg)}}
+@keyframes kx-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+@keyframes kx-march{to{stroke-dashoffset:-23}}
+@keyframes kx-fade{from{opacity:0}to{opacity:1}}
+@keyframes kx-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes kx-click{from{opacity:.95;transform:scale(.3)}to{opacity:0;transform:scale(1.25)}}
+@keyframes kx-pulse{0%,100%{box-shadow:0 0 0 0 rgba(247,217,107,.5)}60%{box-shadow:0 0 0 12px rgba(247,217,107,0)}}
+@keyframes kx-glow{0%,100%{filter:drop-shadow(0 0 0 rgba(247,217,107,0))}50%{filter:drop-shadow(0 0 9px rgba(247,217,107,.85))}}
+@keyframes kx-nudge{0%,100%{transform:none}25%{transform:translateY(-5px)}60%{transform:translateY(3px)}}
+.kx-still,.kx-still *{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion:reduce){.kx-ring,.kx-eyes,.kx-flow,.kx-ring2,.kx-live button[data-g],.kx-live g[data-g]{animation:none}.kx-cur,.sq-body,.sq-hl{transition:none}}

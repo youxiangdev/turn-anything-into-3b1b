@@ -1,0 +1,46 @@
+
+# Opening · Intro
+
+## scene · Two parcel-locker networks
+   0  step  1  Two companies run parcel lockers, and they made one decision differently.
+   1  step  2  The authors watched 60 deliveries at each.
+
+# Orientation · Map
+
+## map · The five parts
+   2  step  1  A parcel goes through check-in first.
+   3  step  2  Check-in hands the size class to assignment, which hands a compartment to the door.
+   4  step  3  The door reports back when it has closed.
+
+# Part 1 · Check-in
+
+## scene · The scan
+   5  step  1  The courier scans the barcode.
+   6  step  2  The lookup returns the size class.
+   7  step  3  An unknown barcode is refused.
+
+# Part 2 · Assignment
+
+## sim · Picking a compartment
+   8  step  1  The locker reads the size class.
+   9  step  2  It picks the smallest compartment that fits.
+  10  step  3  The compartment is held.
+  11  step  4  A hold lasts ten minutes.
+  12  step  5  A full locker turns the courier away.
+  13  step  6  A door left open takes the compartment out of service.
+  14  step  7  BoxPost reserves earlier, and for two days.
+
+# Scenario · Delivery
+
+## seq · A normal delivery
+  15  step  1  Scan.
+  16  step  2  Assign.
+  17  step  3  Close.
+
+# Close · Findings
+
+## scene · What the paper found
+  18  step  1  Fewer couriers were turned away.
+  19  step  2  Lockers ran fuller.
+
+Total: 20 frames, about 2.0 minutes at 1x, 6 chapters

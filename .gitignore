@@ -1,0 +1,9 @@
+# Run folders: they hold the full text of whatever was researched, which is usually someone else's work
+deep-dive-*/
+# Trial runs of the skills on real sources
+tests/trials/
+
+.DS_Store
+__pycache__/
+*.pyc
+shots/
